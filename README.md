@@ -140,6 +140,7 @@ Dashboard UI
    └─ JSON Download (exact judge schema)
 
 
+
 🧠 Known Limitations
 Very dense graphs can make cycle enumeration heavier; depth is bounded to 5 with optional ring limits.
 Rule-based scoring may miss novel laundering patterns outside cycle/smurf/shell families.
