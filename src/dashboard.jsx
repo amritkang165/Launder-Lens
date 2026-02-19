@@ -177,12 +177,71 @@ const suspiciousSet = new Set((output?.suspicious_accounts || []).map((x) => x.a
     })
   );
 
-  const cycleEdgeSet = new Set();
-  cycleRings.forEach((ring) => {
-    for (let i = 0; i < ring.length; i++) {
-      cycleEdgeSet.add(`${ring[i]}->${ring[(i + 1) % ring.length]}`);
+// Build edge highlights from ALL detected rings
+// edgeKey format: "A->B" => pattern_type
+const ringEdgeMap = new Map();
+
+if (output?.fraud_rings?.length) {
+  for (const ring of output.fraud_rings) {
+    const members = ring.member_accounts;
+
+    if (ring.pattern_type === "cycle") {
+      // cycle edges: follow the member order as cycle path
+      for (let i = 0; i < members.length; i++) {
+        const a = members[i];
+        const b = members[(i + 1) % members.length];
+        ringEdgeMap.set(`${a}->${b}`, "cycle");
+      }
+    } else if (ring.pattern_type === "smurfing_fanin") {
+      // many -> hub : treat first element as hub if your detectSmurfing returns [hub,...]
+      // If not sure, we make hub = the one with max in-degree (safe)
+      let hub = members[0];
+      if (graph?.in) {
+        hub =
+          members.reduce((best, id) => {
+            const deg = graph.in.get(id)?.size || 0;
+            const bestDeg = graph.in.get(best)?.size || 0;
+            return deg > bestDeg ? id : best;
+          }, members[0]);
+      }
+
+      for (const m of members) {
+        if (m === hub) continue;
+        ringEdgeMap.set(`${m}->${hub}`, "smurfing_fanin");
+      }
+    } else if (ring.pattern_type === "smurfing_fanout") {
+      // hub -> many : hub = max out-degree
+      let hub = members[0];
+      if (graph?.out) {
+        hub =
+          members.reduce((best, id) => {
+            const deg = graph.out.get(id)?.size || 0;
+            const bestDeg = graph.out.get(best)?.size || 0;
+            return deg > bestDeg ? id : best;
+          }, members[0]);
+      }
+
+      for (const m of members) {
+        if (m === hub) continue;
+        ringEdgeMap.set(`${hub}->${m}`, "smurfing_fanout");
+      }
+    } else if (ring.pattern_type === "shell_chain") {
+      // shell chain: we don't store the exact path in JSON, so approximate:
+      // highlight edges between consecutive members if they exist in graph
+      for (let i = 0; i < members.length; i++) {
+        for (let j = 0; j < members.length; j++) {
+          if (i === j) continue;
+          const a = members[i];
+          const b = members[j];
+          if (graph?.out?.get(a)?.has(b)) {
+            ringEdgeMap.set(`${a}->${b}`, "shell_chain");
+          }
+        }
+      }
     }
-  });
+  }
+}
+
 
 
   return (
@@ -311,6 +370,10 @@ const suspiciousSet = new Set((output?.suspicious_accounts || []).map((x) => x.a
             <Legend color="#14ff6e" label="Normal Account" />
             <Legend color="#ef4444" label="Suspicious Account" />
             <Legend color="#ef4444" label="Cycle Transaction" line />
+            <Legend color="#f97316" label="Smurfing Fan-in Edge" line />
+<Legend color="#60a5fa" label="Smurfing Fan-out Edge" line />
+<Legend color="#a78bfa" label="Shell Chain Edge" line />
+
           </div>
 
           {fgData && (
@@ -323,12 +386,22 @@ const suspiciousSet = new Set((output?.suspicious_accounts || []).map((x) => x.a
                   ctx.fillStyle = suspiciousSet.has(node.id) ? "#ef4444" : "#14ff6e";
                   ctx.fill();
                 }}
-                linkColor={(l) =>
-                  cycleEdgeSet.has(`${l.source.id}->${l.target.id}`) ? "#ef4444" : "#555"
-                }
-                linkWidth={(l) =>
-                  cycleEdgeSet.has(`${l.source.id}->${l.target.id}`) ? 2 : 1
-                }
+               linkColor={(l) => {
+  const key = `${l.source.id}->${l.target.id}`;
+  const type = ringEdgeMap.get(key);
+
+  if (type === "cycle") return "#ef4444";          // red
+  if (type === "smurfing_fanin") return "#f97316"; // orange
+  if (type === "smurfing_fanout") return "#60a5fa"; // blue
+  if (type === "shell_chain") return "#a78bfa";    // purple
+
+  return "#555";
+}}
+linkWidth={(l) => {
+  const key = `${l.source.id}->${l.target.id}`;
+  return ringEdgeMap.has(key) ? 2 : 1;
+}}
+
                 cooldownTicks={150}
               />
             </div>

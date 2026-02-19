@@ -1,36 +1,49 @@
-export function detectCycles(out, { minLen = 3, maxLen = 5 } = {}) {
+// Detect directed cycles of length 3 to 5
+// Returns array of rings, each ring = [A, B, C, ...] in cycle order
+export function detectCycles(out, { minLen = 3, maxLen = 5, limit = 500 } = {}) {
   const rings = [];
   const seen = new Set();
-  const nodes = Array.from(out.keys());
 
-  const canon = (members) => [...members].sort().join("|");
+  const nodes = Array.from(out.keys());
+  const hasEdge = (a, b) => out.get(a)?.has(b);
+
+  function addCycle(path) {
+    // path is like [A,B,C] where last connects back to first
+    const key = [...path].sort().join("|");
+    if (seen.has(key)) return;
+    seen.add(key);
+    rings.push([...path]);
+  }
 
   for (const start of nodes) {
-    const path = [start];
+    const stack = [[start, [start]]];
 
-    function dfs(curr) {
-      if (path.length > maxLen) return;
+    while (stack.length) {
+      const [cur, path] = stack.pop();
 
-      for (const nxt of out.get(curr) || []) {
+      // Stop growing beyond maxLen
+      if (path.length > maxLen) continue;
+
+      for (const nxt of out.get(cur) || []) {
         if (nxt === start) {
-          if (path.length >= minLen) {
-            const members = [...path];
-            const key = canon(members);
-            if (!seen.has(key)) {
-              seen.add(key);
-              rings.push(members);
-            }
+          // found a cycle
+          const cycleLen = path.length;
+          if (cycleLen >= minLen && cycleLen <= maxLen) {
+            addCycle(path);
+            if (rings.length >= limit) return rings;
           }
           continue;
         }
+
+        // avoid revisiting nodes in the same path
         if (path.includes(nxt)) continue;
-        path.push(nxt);
-        dfs(nxt);
-        path.pop();
+
+        // only extend if we still can reach maxLen
+        if (path.length < maxLen) {
+          stack.push([nxt, [...path, nxt]]);
+        }
       }
     }
-
-    dfs(start);
   }
 
   return rings;
