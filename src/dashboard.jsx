@@ -38,6 +38,7 @@ function downloadJSON(obj) {
 export default function Dashboard() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
+ 
 
   // ✅ Autoload rows from CoverPage upload
   useEffect(() => {

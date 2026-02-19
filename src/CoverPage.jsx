@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import "./CoverPage.css";
 import "./App.css";
 
+
 function CoverPage() {
   const [showModal, setShowModal] = useState(false);
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
 
 
   // Load Spline script
@@ -51,11 +53,12 @@ function CoverPage() {
     complete: (results) => {
       sessionStorage.setItem("launderlens_rows", JSON.stringify(results.data));
       setShowModal(false);
-      navigate("/dashboard");
+      navigate("/loading"); // 👈 landing → loading
     },
     error: () => setError("Failed to parse CSV."),
   });
 };
+
 
 
   return (
