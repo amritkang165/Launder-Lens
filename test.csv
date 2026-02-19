@@ -1,0 +1,4 @@
+transaction_id,sender_id,receiver_id,amount,timestamp
+T1,A,B,100,2026-02-18 10:00:00
+T2,B,C,90,2026-02-18 11:00:00
+T3,C,A,80,2026-02-18 12:00:00
