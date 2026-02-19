@@ -1,3 +1,4 @@
+// Dashboard.jsx
 import {
   BarChart,
   Bar,
@@ -9,7 +10,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import ForceGraph2D from "react-force-graph-2d";
 
@@ -25,10 +26,10 @@ import "./dashboard.css";
 
 function buildForceGraph(transactions) {
   const nodeMap = new Map();
+
   const links = transactions.map((t) => {
     if (!nodeMap.has(t.sender_id)) nodeMap.set(t.sender_id, { id: t.sender_id });
-    if (!nodeMap.has(t.receiver_id))
-      nodeMap.set(t.receiver_id, { id: t.receiver_id });
+    if (!nodeMap.has(t.receiver_id)) nodeMap.set(t.receiver_id, { id: t.receiver_id });
 
     return {
       source: t.sender_id,
@@ -38,7 +39,14 @@ function buildForceGraph(transactions) {
     };
   });
 
-  return { nodes: Array.from(nodeMap.values()), links };
+  // ✅ Spread nodes so bbox isn't zero (prevents giant blob)
+  const nodes = Array.from(nodeMap.values()).map((n, i) => ({
+    ...n,
+    x: (i % 40) * 12,
+    y: Math.floor(i / 40) * 12,
+  }));
+
+  return { nodes, links };
 }
 
 function downloadJSON(obj) {
@@ -57,7 +65,8 @@ function SummaryCard({ label, value, color = "#14ff6e" }) {
   return (
     <div
       style={{
-        background: "linear-gradient(180deg, rgba(17,24,39,0.95), rgba(2,6,23,0.95))",
+        background:
+          "linear-gradient(180deg, rgba(17,24,39,0.95), rgba(2,6,23,0.95))",
         border: "1px solid rgba(31,41,51,0.9)",
         padding: 16,
         borderRadius: 14,
@@ -110,7 +119,6 @@ function applyRingLayout(fgData, output, graph) {
   const nodeById = new Map(fgData.nodes.map((n) => [n.id, n]));
   const used = new Set();
 
-  // More separated zones so shapes don't collide
   const zones = {
     cycle: { x: -320, y: -170 },
     smurfing_fanin: { x: -320, y: 170 },
@@ -122,7 +130,6 @@ function applyRingLayout(fgData, output, graph) {
     const center = zones[ring.pattern_type] || { x: 0, y: 0 };
     const members = ring.member_accounts || [];
 
-    // Cycle: circle
     if (ring.pattern_type === "cycle") {
       const R = Math.max(45, Math.min(80, members.length * 16));
       members.forEach((id, i) => {
@@ -135,11 +142,7 @@ function applyRingLayout(fgData, output, graph) {
       });
     }
 
-    // Smurfing: star around hub
-    if (
-      ring.pattern_type === "smurfing_fanin" ||
-      ring.pattern_type === "smurfing_fanout"
-    ) {
+    if (ring.pattern_type === "smurfing_fanin" || ring.pattern_type === "smurfing_fanout") {
       let hub = members[0];
 
       if (ring.pattern_type === "smurfing_fanout" && graph?.out) {
@@ -177,7 +180,6 @@ function applyRingLayout(fgData, output, graph) {
       });
     }
 
-    // Shell chain: line
     if (ring.pattern_type === "shell_chain") {
       const spacing = 46;
       const startX = center.x - ((members.length - 1) * spacing) / 2;
@@ -237,7 +239,6 @@ function buildRingEdgeMap(output, graph) {
         ringEdgeMap.set(`${hub}->${m}`, "smurfing_fanout");
       }
     } else if (ring.pattern_type === "shell_chain") {
-      // highlight existing edges between any consecutive in chain order if present
       for (let i = 0; i < members.length - 1; i++) {
         const a = members[i];
         const b = members[i + 1];
@@ -265,12 +266,37 @@ export default function Dashboard() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
 
-  // Node inspector
   const [activeNode, setActiveNode] = useState(null);
   const [activeNodePinned, setActiveNodePinned] = useState(null);
 
-  // ForceGraph ref for zoomToFit
-  const fgRef = useRef();
+  const fgRef = useRef(null);
+
+  // ✅ container size for ForceGraph (cross-device stable)
+  const graphWrapRef = useRef(null);
+  const [fgSize, setFgSize] = useState({ w: 800, h: 600 });
+
+  useLayoutEffect(() => {
+    const el = graphWrapRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const w = Math.max(320, Math.floor(r.width));
+      const h = Math.max(320, Math.floor(r.height));
+      setFgSize({ w, h });
+    };
+
+    measure();
+
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("launderlens_rows");
@@ -300,7 +326,6 @@ export default function Dashboard() {
         }
         setRows(results.data);
         sessionStorage.setItem("launderlens_rows", JSON.stringify(results.data));
-        // reset inspector when new data comes
         setActiveNode(null);
         setActiveNodePinned(null);
       },
@@ -311,9 +336,12 @@ export default function Dashboard() {
   const transactions = useMemo(() => (rows.length ? parseTransactions(rows) : []), [rows]);
   const graph = useMemo(() => (transactions.length ? buildGraph(transactions) : null), [transactions]);
   const cycleRings = useMemo(() => (graph ? detectCycles(graph.out) : []), [graph]);
-  const output = useMemo(() => (graph ? runDetection(transactions, graph, cycleRings) : null), [transactions, graph, cycleRings]);
 
-  // ring counts
+  const output = useMemo(
+    () => (graph ? runDetection(transactions, graph, cycleRings) : null),
+    [transactions, graph, cycleRings]
+  );
+
   const ringCounts = useMemo(() => {
     if (!output?.fraud_rings?.length) return { total: 0, cycles: 0, smurf: 0, shell: 0 };
     return output.fraud_rings.reduce(
@@ -333,7 +361,6 @@ export default function Dashboard() {
     [output]
   );
 
-  // Build fgData and apply fixed layout
   const fgData = useMemo(() => {
     if (!transactions.length) return null;
     let d = buildForceGraph(transactions);
@@ -341,18 +368,6 @@ export default function Dashboard() {
     return d;
   }, [transactions, output, graph]);
 
-  // Center the fixed layout in the canvas
-  useEffect(() => {
-    if (!fgRef.current || !fgData?.nodes?.length) return;
-    requestAnimationFrame(() => {
-      try {
-        fgRef.current.centerAt(0, 0, 0);
-        fgRef.current.zoomToFit(600, 60); // ms, padding
-      } catch (e) { }
-    });
-  }, [fgData]);
-
-  // Time series (per hour)
   const transactionTimeSeries = useMemo(() => {
     const timeBucketMap = {};
     for (const t of transactions) {
@@ -366,7 +381,6 @@ export default function Dashboard() {
       .map(([time, count]) => ({ time, count }));
   }, [transactions]);
 
-  // Tx count per account
   const transactionCountData = useMemo(() => {
     const transactionCountMap = {};
     for (const t of transactions) {
@@ -380,14 +394,12 @@ export default function Dashboard() {
     }));
   }, [transactions, suspiciousSet]);
 
-  // Ring edges → color
   const ringEdgeMap = useMemo(() => buildRingEdgeMap(output, graph), [output, graph]);
 
   const linkColor = (l) => {
     const s = typeof l.source === "object" ? l.source.id : l.source;
     const t = typeof l.target === "object" ? l.target.id : l.target;
-    const key = `${s}->${t}`;
-    const typ = ringEdgeMap.get(key);
+    const typ = ringEdgeMap.get(`${s}->${t}`);
 
     if (typ === "cycle") return "#ef4444";
     if (typ === "smurfing_fanin") return "#f97316";
@@ -399,8 +411,7 @@ export default function Dashboard() {
   const linkWidth = (l) => {
     const s = typeof l.source === "object" ? l.source.id : l.source;
     const t = typeof l.target === "object" ? l.target.id : l.target;
-    const key = `${s}->${t}`;
-    return ringEdgeMap.has(key) ? 2.2 : 1;
+    return ringEdgeMap.has(`${s}->${t}`) ? 2.2 : 1;
   };
 
   function getNodeDetails(nodeId) {
@@ -448,12 +459,7 @@ export default function Dashboard() {
 
         <label className="update-btn">
           ⬆ Upload New CSV
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFile}
-            hidden
-          />
+          <input type="file" accept=".csv" onChange={handleFile} hidden />
         </label>
       </div>
 
@@ -501,30 +507,12 @@ export default function Dashboard() {
                 padding: "12px 22px",
                 fontSize: "0.95rem",
                 fontWeight: 600,
-
                 background: "transparent",
                 color: "#14ff6e",
-
                 border: "1.5px solid #14ff6e",
                 borderRadius: "10px",
-
                 cursor: "pointer",
                 transition: "all 0.25s ease",
-
-                boxShadow: "0 0 0 rgba(20, 255, 110, 0)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#5ccd88";
-                e.currentTarget.style.color = "#000";
-                e.currentTarget.style.boxShadow =
-                  "0 0 18px rgba(20, 255, 110, 0.7), 0 0 40px rgba(20, 255, 110, 0.4)";
-                e.currentTarget.style.transform = "translateY(-1px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "#14ff6e";
-                e.currentTarget.style.boxShadow = "0 0 0 rgba(20, 255, 110, 0)";
-                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               ⬇ Download Investigation Report
@@ -563,11 +551,7 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={transactionTimeSeries}>
                     <CartesianGrid stroke="#1f2933" vertical={false} />
-                    <XAxis
-                      dataKey="time"
-                      tick={{ fill: "#9ca3af", fontSize: 11 }}
-                      minTickGap={20}
-                    />
+                    <XAxis dataKey="time" tick={{ fill: "#9ca3af", fontSize: 11 }} minTickGap={20} />
                     <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} />
                     <Tooltip />
                     <Line type="monotone" dataKey="count" stroke="#14ff6e" strokeWidth={3} dot={false} />
@@ -634,11 +618,12 @@ export default function Dashboard() {
             <LegendDot color="#a78bfa" label="Shell chain edge" line />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 16 }}>
+          <div className="ll-graph-grid">
             {/* Graph Box */}
             <div
+              ref={graphWrapRef}
+              className="ll-graph-box"
               style={{
-                height: 600,
                 background: "#020617",
                 borderRadius: 14,
                 border: "1px solid #1f2933",
@@ -650,12 +635,22 @@ export default function Dashboard() {
                 <ForceGraph2D
                   ref={fgRef}
                   graphData={fgData}
+                  width={fgSize.w}
+                  height={fgSize.h}
+                  backgroundColor="rgba(0,0,0,0)"
 
-                  /* FULLY LOCKED */
+                  // ✅ let it settle then fit (prevents blob on Safari/Vercel)
+                  cooldownTicks={120}
+                  onEngineStop={() => {
+                    try {
+                      fgRef.current.zoomToFit(500, 80);
+                    } catch {}
+                  }}
+
+                  // lock user interactions
                   enableZoomInteraction={false}
                   enablePanInteraction={false}
                   enableNodeDrag={false}
-                  cooldownTicks={0}
 
                   nodeCanvasObject={(node, ctx) => {
                     const pinnedId = activeNodePinned?.id;
@@ -673,10 +668,8 @@ export default function Dashboard() {
                       ctx.stroke();
                     }
                   }}
-
                   linkColor={linkColor}
                   linkWidth={linkWidth}
-
                   onNodeHover={(node) => {
                     if (!node) {
                       if (!activeNodePinned) setActiveNode(null);
@@ -685,7 +678,6 @@ export default function Dashboard() {
                     if (activeNodePinned) return;
                     setActiveNode(getNodeDetails(node.id));
                   }}
-
                   onNodeClick={(node) => {
                     if (!node) return;
                     const details = getNodeDetails(node.id);
@@ -699,16 +691,14 @@ export default function Dashboard() {
                   }}
                 />
               ) : (
-                <div style={{ padding: 16, opacity: 0.7 }}>
-                  Upload a CSV to render the graph.
-                </div>
+                <div style={{ padding: 16, opacity: 0.7 }}>Upload a CSV to render the graph.</div>
               )}
             </div>
 
             {/* Inspector */}
             <div
+              className="ll-inspector"
               style={{
-                height: 600,
                 background: "#111827",
                 borderRadius: 14,
                 border: "1px solid #1f2933",
@@ -754,8 +744,7 @@ export default function Dashboard() {
                   <br />
                   Hover a node in the graph to see its stats.
                 </div>
-              ) : (
-                (() => {
+              ) : (() => {
                   const d = activeNodePinned || activeNode;
                   return (
                     <div style={{ fontSize: 13, lineHeight: 1.7 }}>
@@ -797,8 +786,7 @@ export default function Dashboard() {
                       )}
                     </div>
                   );
-                })()
-              )}
+                })()}
             </div>
           </div>
         </div>
@@ -850,7 +838,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* FOOTER NOTE */}
         <div style={{ marginTop: 40, paddingBottom: 40, opacity: 0.6, fontSize: 12 }}>
           LaunderLens • Graph-based financial crime detection • CSV in → Rings out • Export JSON.
         </div>
