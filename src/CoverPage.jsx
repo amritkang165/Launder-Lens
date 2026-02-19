@@ -58,22 +58,23 @@ function CoverPage() {
       error: () => setError("Failed to parse CSV."),
     });
   };
-
-
-
   return (
     <div className="cover-container">
-      <img
-        src={securityGif}
-        alt="Security"
-        className="corner-gif"
-      />
+      {/* Home Button */}
+      <button
+        className="home-btn"
+        onClick={() => {
+          sessionStorage.clear();   // 🔄 reset everything
+          navigate("/");
+        }}
+      >
+        Home
+      </button>
       {/* Spline Background */}
       <div className="spline-bg">
-        <spline-viewer url="https://prod.spline.design/SMOEtnIQMbZh1EUN/scene.splinecode"></spline-viewer>
+        <spline-viewer url="https://prod.spline.design/SMOEtnIQMbZh1EUN/scene.splinecode" />
       </div>
-
-      {/* Center Content */}
+      {/* 🔹 Center Button */}
       <div className="center-overlay">
         <h1 className="project-title">LaunderLens</h1>
 
@@ -84,45 +85,56 @@ function CoverPage() {
           Upload & Analyze
         </button>
       </div>
+      {/* Bottom-right sticker */ }
+  <img
+    src={securityGif}
+    alt="Security"
+    className="corner-gif"
+  />
 
-      {/* Modal */}
-      {showModal && (
+  {/* Hide Spline Badge */ }
+  <div className="spline-cover"></div>
+
+  {/* Modal */ }
+  {
+    showModal && (
+      <div
+        className="modal-backdrop"
+        onClick={() => setShowModal(false)}
+      >
         <div
-          className="modal-backdrop"
-          onClick={() => setShowModal(false)}
+          className="modal-box"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="modal-box"
-            onClick={(e) => e.stopPropagation()}
+          <h3>Upload Transaction CSV</h3>
+
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileChange}
+          />
+
+          {file && (
+            <p className="upload-hint">
+              Selected: {file.name}
+            </p>
+          )}
+
+          {error && (
+            <p className="upload-error">{error}</p>
+          )}
+
+          <button
+            className="submit-btn"
+            onClick={handleSubmit}
           >
-            <h3>Upload Transaction CSV</h3>
-
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-            />
-
-            {file && (
-              <p className="upload-hint">
-                Selected: {file.name}
-              </p>
-            )}
-
-            {error && (
-              <p className="upload-error">{error}</p>
-            )}
-
-            <button
-              className="submit-btn"
-              onClick={handleSubmit}
-            >
-              Submit
-            </button>
-          </div>
+            Submit
+          </button>
         </div>
-      )}
-    </div>
+      </div>
+    )
+  }
+    </div >
   );
 }
 
