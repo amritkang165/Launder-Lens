@@ -1,31 +1,36 @@
-export function detectCycles(out) {
+export function detectCycles(out, { minLen = 3, maxLen = 5 } = {}) {
   const rings = [];
-  const seen = new Set(); // stores canonical keys like "A|B|C"
-
+  const seen = new Set();
   const nodes = Array.from(out.keys());
-  const hasEdge = (a, b) => out.get(a)?.has(b);
 
-  for (const a of nodes) {
-    for (const b of out.get(a) || []) {
-      if (b === a) continue;
+  const canon = (members) => [...members].sort().join("|");
 
-      for (const c of out.get(b) || []) {
-        if (c === a || c === b) continue;
+  for (const start of nodes) {
+    const path = [start];
 
-        // cycle length 3: A -> B -> C -> A
-        if (hasEdge(c, a)) {
-          const members = [a, b, c];
+    function dfs(curr) {
+      if (path.length > maxLen) return;
 
-          // canonical key = sorted members (order-independent)
-          const key = [...members].sort().join("|");
-
-          if (!seen.has(key)) {
-            seen.add(key);
-            rings.push(members);
+      for (const nxt of out.get(curr) || []) {
+        if (nxt === start) {
+          if (path.length >= minLen) {
+            const members = [...path];
+            const key = canon(members);
+            if (!seen.has(key)) {
+              seen.add(key);
+              rings.push(members);
+            }
           }
+          continue;
         }
+        if (path.includes(nxt)) continue;
+        path.push(nxt);
+        dfs(nxt);
+        path.pop();
       }
     }
+
+    dfs(start);
   }
 
   return rings;

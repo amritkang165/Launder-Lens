@@ -1,3 +1,5 @@
+import Papa from "papaparse";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "./CoverPage.css";
 import "./App.css";
@@ -6,6 +8,8 @@ function CoverPage() {
   const [showModal, setShowModal] = useState(false);
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+
 
   // Load Spline script
   useEffect(() => {
@@ -36,14 +40,23 @@ function CoverPage() {
   };
 
   const handleSubmit = () => {
-    if (!file) {
-      setError("Please choose a CSV file first.");
-      return;
-    }
+  if (!file) {
+    setError("Please choose a CSV file first.");
+    return;
+  }
 
-    console.log("CSV ready for analysis:", file);
-    setShowModal(false);
-  };
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      sessionStorage.setItem("launderlens_rows", JSON.stringify(results.data));
+      setShowModal(false);
+      navigate("/dashboard");
+    },
+    error: () => setError("Failed to parse CSV."),
+  });
+};
+
 
   return (
     <div className="cover-container">
