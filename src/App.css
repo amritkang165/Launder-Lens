@@ -1,42 +1,90 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+.cover-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Spline full screen */
+.spline-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.spline-bg spline-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+/* Content on top of Spline */
+.overlay {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-align: center;
+  background: rgba(2, 6, 23, 0.6); /* dark overlay */
+  color: #e5e7eb;
+  padding: 40px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #38bdf8;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.tagline {
+  margin-top: 10px;
+  font-size: 1.3rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.description {
+  max-width: 600px;
+  margin: 25px 0;
 }
 
-.card {
-  padding: 2em;
+.cta-button {
+  padding: 14px 28px;
+  background: #38bdf8;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background-color: #000000;
+}
+.center-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: none; /* lets spline stay interactive */
 }
 
-.read-the-docs {
-  color: #888;
+.project-title {
+  font-size: 5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+
+  color: #ffffff;
+  text-shadow:
+    0 0 15px rgba(20, 255, 110, 0.7),
+    0 0 40px rgba(56, 189, 248, 0.4);
+
+  transform: translateY(-40px); /* 👈 moves text UP */
+  user-select: none;
 }
+
