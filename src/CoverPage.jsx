@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "./CoverPage.css";
 import "./App.css";
-
+import securityGif from "./assets/security.gif";
 
 function CoverPage() {
   const [showModal, setShowModal] = useState(false);
@@ -42,27 +42,32 @@ function CoverPage() {
   };
 
   const handleSubmit = () => {
-  if (!file) {
-    setError("Please choose a CSV file first.");
-    return;
-  }
+    if (!file) {
+      setError("Please choose a CSV file first.");
+      return;
+    }
 
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: (results) => {
-      sessionStorage.setItem("launderlens_rows", JSON.stringify(results.data));
-      setShowModal(false);
-      navigate("/loading"); // 👈 landing → loading
-    },
-    error: () => setError("Failed to parse CSV."),
-  });
-};
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        sessionStorage.setItem("launderlens_rows", JSON.stringify(results.data));
+        setShowModal(false);
+        navigate("/loading"); // 👈 landing → loading
+      },
+      error: () => setError("Failed to parse CSV."),
+    });
+  };
 
 
 
   return (
     <div className="cover-container">
+      <img
+        src={securityGif}
+        alt="Security"
+        className="corner-gif"
+      />
       {/* Spline Background */}
       <div className="spline-bg">
         <spline-viewer url="https://prod.spline.design/SMOEtnIQMbZh1EUN/scene.splinecode"></spline-viewer>

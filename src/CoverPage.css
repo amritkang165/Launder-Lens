@@ -51,3 +51,21 @@ html, body, #root {
   transform: translateY(-40px);
   user-select: none;
 }
+.corner-gif {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+
+  width: 200px;
+  z-index: 3;
+  pointer-events: none;
+
+  filter: drop-shadow(0 0 12px rgba(20, 255, 110, 0.6));
+}
+@media (max-width: 768px) {
+  .corner-gif {
+    width: 65px;
+    bottom: 16px;
+    right: 16px;
+  }
+}
