@@ -78,6 +78,10 @@ function CoverPage() {
       <div className="center-overlay">
         <h1 className="project-title">LaunderLens</h1>
 
+        <p className="project-tagline">
+          From transactions to fraud rings.
+        </p>
+
         <button
           className="main-cta"
           onClick={() => setShowModal(true)}
@@ -85,55 +89,55 @@ function CoverPage() {
           Upload & Analyze
         </button>
       </div>
-      {/* Bottom-right sticker */ }
-  <img
-    src={securityGif}
-    alt="Security"
-    className="corner-gif"
-  />
+      {/* Bottom-right sticker */}
+      <img
+        src={securityGif}
+        alt="Security"
+        className="corner-gif"
+      />
 
-  {/* Hide Spline Badge */ }
-  <div className="spline-cover"></div>
+      {/* Hide Spline Badge */}
+      <div className="spline-cover"></div>
 
-  {/* Modal */ }
-  {
-    showModal && (
-      <div
-        className="modal-backdrop"
-        onClick={() => setShowModal(false)}
-      >
-        <div
-          className="modal-box"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h3>Upload Transaction CSV</h3>
-
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-          />
-
-          {file && (
-            <p className="upload-hint">
-              Selected: {file.name}
-            </p>
-          )}
-
-          {error && (
-            <p className="upload-error">{error}</p>
-          )}
-
-          <button
-            className="submit-btn"
-            onClick={handleSubmit}
+      {/* Modal */}
+      {
+        showModal && (
+          <div
+            className="modal-backdrop"
+            onClick={() => setShowModal(false)}
           >
-            Submit
-          </button>
-        </div>
-      </div>
-    )
-  }
+            <div
+              className="modal-box"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3>Upload Transaction CSV</h3>
+
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+              />
+
+              {file && (
+                <p className="upload-hint">
+                  Selected: {file.name}
+                </p>
+              )}
+
+              {error && (
+                <p className="upload-error">{error}</p>
+              )}
+
+              <button
+                className="submit-btn"
+                onClick={handleSubmit}
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        )
+      }
     </div >
   );
 }
