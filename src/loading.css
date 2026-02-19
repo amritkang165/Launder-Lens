@@ -1,0 +1,102 @@
+.loading-container {
+  height: 100vh;
+  background: radial-gradient(circle at center, #020617, #000);
+  color: #e5e7eb;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+
+/* Title */
+.loading-title {
+  font-size: 3.6rem;
+  font-weight: 700;
+  color: #14ff6e;
+
+  text-shadow:
+    0 0 12px rgba(20, 255, 110, 0.8),
+    0 0 40px rgba(20, 255, 110, 0.4);
+
+  margin-bottom: 6px;
+}
+
+/* Tagline */
+.loading-tagline {
+  font-size: 1.05rem;
+  opacity: 0.8;
+  margin-bottom: 36px;
+}
+
+/* Loader wrapper */
+.loader-wrapper {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 20px;
+}
+
+/* Outer ring */
+.loader-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+
+  border: 3px solid rgba(20, 255, 110, 0.25);
+  border-top-color: #14ff6e;
+
+  animation: spin 1.1s linear infinite;
+  box-shadow: 0 0 22px rgba(20, 255, 110, 0.6);
+}
+
+/* Inner ring */
+.loader-inner {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+
+  border: 2px solid rgba(20, 255, 110, 0.15);
+  border-bottom-color: #14ff6e;
+
+  animation: spinReverse 0.9s linear infinite;
+}
+
+/* Scanning text */
+.loading-sub {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* Subtle pulse effect */
+.scanning {
+  animation: scanPulse 1.6s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinReverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes scanPulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}

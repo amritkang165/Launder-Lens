@@ -17,6 +17,7 @@ import { runDetection } from "./Engine/runDetection";
 import { parseTransactions } from "./Engine/parseTransactions";
 import { buildGraph } from "./Engine/buildGraph";
 import { detectCycles } from "./Engine/detectCycles";
+import "./dashboard.css";
 
 /* -----------------------------
    Helpers
@@ -347,7 +348,7 @@ export default function Dashboard() {
       try {
         fgRef.current.centerAt(0, 0, 0);
         fgRef.current.zoomToFit(600, 60); // ms, padding
-      } catch (e) {}
+      } catch (e) { }
     });
   }, [fgData]);
 
@@ -445,19 +446,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <label
-          style={{
-            border: "1px solid #14ff6e",
-            padding: "8px 14px",
-            borderRadius: 10,
-            cursor: "pointer",
-            color: "#14ff6e",
-            fontWeight: 800,
-            background: "rgba(20,255,110,0.05)",
-          }}
-        >
-          Upload New CSV
-          <input type="file" accept=".csv" onChange={handleFile} style={{ display: "none" }} />
+        <label className="update-btn">
+          ⬆ Upload New CSV
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFile}
+            hidden
+          />
         </label>
       </div>
 
@@ -502,17 +498,36 @@ export default function Dashboard() {
             <button
               onClick={() => downloadJSON(output)}
               style={{
-                background: "#14ff6e",
-                color: "#000",
-                border: "none",
-                padding: "10px 14px",
-                borderRadius: 10,
-                fontWeight: 900,
+                padding: "12px 22px",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+
+                background: "transparent",
+                color: "#14ff6e",
+
+                border: "1.5px solid #14ff6e",
+                borderRadius: "10px",
+
                 cursor: "pointer",
-                boxShadow: "0 0 18px rgba(20,255,110,0.18)",
+                transition: "all 0.25s ease",
+
+                boxShadow: "0 0 0 rgba(20, 255, 110, 0)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#5ccd88";
+                e.currentTarget.style.color = "#000";
+                e.currentTarget.style.boxShadow =
+                  "0 0 18px rgba(20, 255, 110, 0.7), 0 0 40px rgba(20, 255, 110, 0.4)";
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "#14ff6e";
+                e.currentTarget.style.boxShadow = "0 0 0 rgba(20, 255, 110, 0)";
+                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
-              Download JSON Output
+              ⬇ Download Investigation Report
             </button>
 
             <div style={{ fontSize: 12, opacity: 0.75, alignSelf: "center" }}>

@@ -1,0 +1,29 @@
+.update-btn {
+  padding: 12px 22px;
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  background: transparent;
+  color: #14ff6e;
+
+  border: 1.5px solid #14ff6e;
+  border-radius: 10px;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  display: inline-block;
+}
+
+.update-btn:hover {
+  background: #5ccd88;
+  color: #000;
+  box-shadow:
+    0 0 18px rgba(20, 255, 110, 0.7),
+    0 0 40px rgba(20, 255, 110, 0.4);
+  transform: translateY(-1px);
+}
+
+.update-btn:active {
+  transform: translateY(0);
+}
