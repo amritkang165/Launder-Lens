@@ -1,0 +1,52 @@
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background-color: #000;
+}
+
+.cover-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Spline full screen */
+.spline-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.spline-bg spline-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+/* Title overlay */
+.center-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: none; /* text doesn't block spline */
+}
+
+.project-title {
+  font-size: 5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+
+  color: #ffffff;
+  text-shadow:
+    0 0 15px rgba(20, 255, 110, 0.7),
+    0 0 40px rgba(56, 189, 248, 0.4);
+
+  transform: translateY(-40px);
+  user-select: none;
+}

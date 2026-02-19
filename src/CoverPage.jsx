@@ -1,11 +1,11 @@
+import "./CoverPage.css";
+
 function CoverPage() {
   return (
     <div className="cover-container">
       {/* Spline Background */}
       <div className="spline-bg">
-        <spline-viewer
-          url="https://prod.spline.design/SMOEtnIQMbZh1EUN/scene.splinecode"
-        ></spline-viewer>
+        <spline-viewer url="https://prod.spline.design/SMOEtnIQMbZh1EUN/scene.splinecode"></spline-viewer>
       </div>
 
       {/* Center Title */}
