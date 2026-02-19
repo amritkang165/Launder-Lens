@@ -47,6 +47,7 @@ function downloadJSON(obj) {
   URL.revokeObjectURL(url);
 }
 
+
 function SummaryCard({ label, value, color = "#14ff6e" }) {
   return (
     <div style={{ background: "#111827", padding: 18, borderRadius: 10, textAlign: "center" }}>
@@ -123,7 +124,20 @@ export default function Dashboard() {
   const cycleRings = graph ? detectCycles(graph.out) : [];
   const output = graph ? runDetection(transactions, graph, cycleRings) : null;
   const fgData = transactions.length ? buildForceGraph(transactions) : null;
-  const suspiciousSet = new Set(cycleRings.flat());
+  const ringCounts =
+  output?.fraud_rings?.reduce(
+    (acc, r) => {
+      acc.total++;
+      if (r.pattern_type === "cycle") acc.cycles++;
+      else if (r.pattern_type.startsWith("smurfing")) acc.smurf++;
+      else if (r.pattern_type === "shell_chain") acc.shell++;
+      return acc;
+    },
+    { total: 0, cycles: 0, smurf: 0, shell: 0 }
+  ) || { total: 0, cycles: 0, smurf: 0, shell: 0 };
+
+const suspiciousSet = new Set((output?.suspicious_accounts || []).map((x) => x.account_id));
+
   // ⏱ Build transaction count over time (72-hour window)
   const timeBucketMap = {};
 
@@ -189,7 +203,30 @@ export default function Dashboard() {
           <SummaryCard label="Transactions" value={transactions.length} />
           <SummaryCard label="Cycle Rings" value={cycleRings.length} color="#facc15" />
           <SummaryCard label="Suspicious Accounts" value={suspiciousSet.size} color="#ef4444" />
+          <SummaryCard label="Total Rings" value={ringCounts.total} color="#60a5fa" />
+<SummaryCard label="Smurf Rings" value={ringCounts.smurf} color="#f97316" />
+<SummaryCard label="Shell Rings" value={ringCounts.shell} color="#a78bfa" />
+
         </div>
+        {output && (
+  <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
+    <button
+      onClick={() => downloadJSON(output)}
+      style={{
+        background: "#14ff6e",
+        color: "#000",
+        border: "none",
+        padding: "10px 14px",
+        borderRadius: 8,
+        fontWeight: 700,
+        cursor: "pointer",
+      }}
+    >
+      Download JSON Output
+    </button>
+  </div>
+)}
+
         {/* ANALYTICS GRAPHS */}
         {transactionTimeSeries.length > 0 && transactionCountData.length > 0 && (
           <div
@@ -309,16 +346,22 @@ export default function Dashboard() {
                   <th style={th}>Pattern</th>
                   <th style={th}>Members</th>
                   <th style={th}>Risk Score</th>
+                  <th style={th}>Member Account IDs</th>
+                  
+
+
                 </tr>
               </thead>
               <tbody>
                 {output.fraud_rings.map((ring) => (
                   <tr key={ring.ring_id}>
-                    <td style={td}>{ring.ring_id}</td>
-                    <td style={td}>{ring.pattern_type}</td>
-                    <td style={td}>{ring.member_accounts.length}</td>
-                    <td style={{ ...td, color: "#ef4444" }}>{ring.risk_score}</td>
-                  </tr>
+  <td style={td}>{ring.ring_id}</td>
+  <td style={td}>{ring.pattern_type}</td>
+  <td style={td}>{ring.member_accounts.length}</td>
+  <td style={{ ...td, color: "#ef4444" }}>{ring.risk_score}</td>
+  <td style={td}>{ring.member_accounts.join(", ")}</td>
+</tr>
+
                 ))}
               </tbody>
             </table>
