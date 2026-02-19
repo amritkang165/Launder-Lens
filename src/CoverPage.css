@@ -31,10 +31,11 @@ html, body, #root {
   z-index: 2;
 
   display: flex;
+  flex-direction: column;   /* 👈 STACK vertically */
   align-items: center;
   justify-content: center;
 
-  pointer-events: none; /* text doesn't block spline */
+  text-align: center;
 }
 
 .project-title {
