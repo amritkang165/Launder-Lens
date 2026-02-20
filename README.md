@@ -7,8 +7,8 @@
 Upload a CSV → Build a transaction graph → Detect muling rings → Visualize networks → Download **judge-format JSON**.
 
 
-🔗 **Live Demo:** `<PASTE YOUR DEPLOYED URL HERE>`  
-📦 **GitHub Repo:** `<PASTE YOUR GITHUB URL HERE>`
+🔗 **Live Demo:** `https://launder-lens-gilt.vercel.app`  
+📦 **GitHub Repo:** `https://github.com/amritkang165/Launder-Lens`
 
 </div>
 
